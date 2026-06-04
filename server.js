@@ -10,7 +10,7 @@ const { router: authRouter, authenticate } = require('./auth');
 const app = express();
 const server = http.createServer(app);
 
-const clientUrls = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map(url => url.trim());
+const clientUrls = (process.env.CLIENT_URL || 'https://backend-urrx.onrender.com').split(',').map(url => url.trim());
 const deployedFrontend = 'https://frontentend1.onrender.com/';
 if (!clientUrls.includes(deployedFrontend)) clientUrls.push(deployedFrontend);
 
