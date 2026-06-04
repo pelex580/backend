@@ -10,9 +10,14 @@ const { router: authRouter, authenticate } = require('./auth');
 const app = express();
 const server = http.createServer(app);
 
-const clientUrls = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map(url => url.trim());
-const deployedFrontend = 'https://muhura-chat-frontend.onrender.com';
-if (!clientUrls.includes(deployedFrontend)) clientUrls.push(deployedFrontend);
+const clientUrls = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map(url => url.trim()).filter(Boolean);
+const deployedFrontends = [
+  'https://muhura-chat-frontend.onrender.com',
+  'https://frontentend1.onrender.com',
+];
+deployedFrontends.forEach(url => {
+  if (!clientUrls.includes(url)) clientUrls.push(url);
+});
 
 const corsOptions = {
   origin: (origin, callback) => {
