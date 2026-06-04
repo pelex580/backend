@@ -24,6 +24,7 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user });
   } catch (err) {
+    console.error('Register error:', err);
     if (err.code === '23505') return res.status(409).json({ error: 'Username or email already taken' });
     res.status(500).json({ error: 'Server error' });
   }
@@ -45,6 +46,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, avatar_color: user.avatar_color } });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

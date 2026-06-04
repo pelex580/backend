@@ -7,6 +7,13 @@ const jwt = require('jsonwebtoken');
 const { pool, initDB } = require('./db');
 const { router: authRouter, authenticate } = require('./auth');
 
+const requiredEnv = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnv = requiredEnv.filter(name => !process.env[name]);
+if (missingEnv.length) {
+  console.error(`Missing required environment variables: ${missingEnv.join(', ')}`);
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
 
@@ -41,6 +48,13 @@ const io = new Server(server, {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
+
+app.use((err, req, res, next) => {
+  if (!err) return next();
+  console.error('Express error:', err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'Server error' });
+});
 
 // Routes
 app.use('/api/auth', authRouter);
