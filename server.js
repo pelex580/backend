@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { pool, initDB } = require('./db');
 const { router: authRouter, authenticate } = require('./auth');
@@ -17,44 +16,25 @@ if (missingEnv.length) {
 const app = express();
 const server = http.createServer(app);
 
-const clientUrls = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map(url => url.trim()).filter(Boolean);
-const deployedFrontends = [
-  'https://muhura-chat-frontend.onrender.com',
-  'https://frontentend1.onrender.com',
-];
-deployedFrontends.forEach(url => {
-  if (!clientUrls.includes(url)) clientUrls.push(url);
-});
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || clientUrls.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed'));
-    }
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-};
-
 const io = new Server(server, {
-  cors: { origin: clientUrls, methods: ['GET', 'POST', 'OPTIONS'] }
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  }
 });
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
 app.use(express.json());
-
-app.use((err, req, res, next) => {
-  if (!err) return next();
-  console.error('Express error:', err);
-  if (res.headersSent) return next(err);
-  res.status(500).json({ error: 'Server error' });
-});
 
 // Routes
 app.use('/api/auth', authRouter);
@@ -83,6 +63,13 @@ app.get('/api/rooms/:roomId/messages', authenticate, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'Server error' });
 });
 
 // Socket.IO auth middleware
